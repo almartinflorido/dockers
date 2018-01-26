@@ -1,4 +1,4 @@
-# docker build -t caffe_deep_dreams .
+# docker build -t rl-dat257x .
 # docker run -ti -p 8888:8888 rl-dat257x
 # docker run -ti -p 8888:8888 -v ~/host/directory:/docker/directory rl-dat257x
 
