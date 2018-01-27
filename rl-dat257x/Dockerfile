@@ -1,3 +1,7 @@
+# docker build -t rl-dat257x .
+# docker run -ti -p 8888:8888 rl-dat257x
+# docker run -ti -p 8888:8888 -v ~/host/directory:/docker/directory rl-dat257x
+
 FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
