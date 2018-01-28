@@ -6,6 +6,7 @@ FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
             build-essential \
+            sudo \
             wget \
             bzip2 \
             ca-certificates \
@@ -35,20 +36,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pip3 install --upgrade pip
 
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/archive/Anaconda3-5.0.1-Linux-x86_64.sh -O ~/anaconda.sh && \
+    wget --quiet https://repo.continuum.io/archive/Anaconda3-4.1.1-Linux-x86_64.sh -O ~/anaconda.sh && \
     /bin/bash ~/anaconda.sh -b -p /opt/conda && \
     rm ~/anaconda.sh
 
-RUN pip install gym && \
-    pip3 install gym && \
-    pip3 install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.3-cp35-cp35m-linux_x86_64.whl && \
-    pip3 install chainer
+RUN adduser --disabled-password --gecos '' docker && \
+    adduser docker sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER docker
+RUN sudo -H /opt/conda/bin/python3.5 -m pip install --upgrade pip && \
+    sudo -H /opt/conda/bin/python3.5 -m pip install gym && \
+    sudo -H /opt/conda/bin/python3.5 -m pip install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.3-cp35-cp35m-linux_x86_64.whl && \
+    sudo -H /opt/conda/bin/python3.5 -m pip install chainer
 
 EXPOSE 8888
 
-RUN useradd -ms /bin/bash user
-USER user
 RUN mkdir ~/notebooks
-WORKDIR /home/user/notebooks
+WORKDIR /home/docker/notebooks
 ENV PATH /opt/conda/bin:$PATH    
-CMD ["jupyter", "notebook", "--no-browser", "--ip=0.0.0.0"]
+CMD sh -c "jupyter notebook --no-browser --ip=*"
