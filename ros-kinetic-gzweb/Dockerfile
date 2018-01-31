@@ -13,14 +13,26 @@ RUN echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources
 
 # install bootstrap tools
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    wget \
-    python-rosdep \
-    python-rosinstall \
-    python-vcstools \
-    python-rosinstall-generator \
-    python-wstool \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+        sudo \
+        wget \
+        python-rosdep \
+        python-rosinstall \
+        python-vcstools \
+        python-rosinstall-generator \
+        python-wstool \
+        build-essential \
+        python-dev \
+        python3-dev \
+        python-pip \
+        python3-pip \
+        python-virtualenv \
+        python-wheel \
+        python-setuptools \    
+        python3-setuptools && \            
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip2 install --upgrade pip && \
+    pip3 install --upgrade pip    
 
 # bootstrap rosdep
 RUN rosdep init &&\
@@ -33,11 +45,6 @@ ENV ROS_DISTRO kinetic
 RUN apt-get update && apt-get install -y \
     ros-kinetic-desktop-full=1.3.1-0* && \
     rm -rf /var/lib/apt/lists/*
-
-#echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
-#source ~/.bashrc
-# RUN source "/opt/ros/$ROS_DISTRO/setup.bash"
-RUN /bin/bash -c "source /usr/share/gazebo/setup.sh" >> ~/.bashrc
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D2486D2DD83DB69272AFE98867170598AF249743
 RUN echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable xenial main" > /etc/apt/sources.list.d/gazebo-stable.list && \
@@ -52,7 +59,10 @@ RUN echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable xenial main
         psmisc \
         xvfb \
         locate \ 
-        libignition-math2-dev &&\        
+        libignition-math2-dev \
+        ros-kinetic-turtlebot-simulator \
+        ros-kinetic-turtlebot3-simulations && \
+    apt-get clean && \        
     rm -rf /var/lib/apt/lists/*
 
 # setup environment
@@ -60,10 +70,12 @@ EXPOSE 8080
 EXPOSE 7681
 EXPOSE 11345
 
-RUN useradd -ms /bin/bash user
+RUN adduser --disabled-password --gecos '' docker && \
+    adduser docker sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # clone gzweb
-ENV GZWEB_WS /home/user/gzweb
+ENV GZWEB_WS /home/docker/gzweb
 RUN hg clone https://bitbucket.org/osrf/gzweb $GZWEB_WS && \
     /bin/bash -c "source /usr/share/gazebo/setup.sh"
 WORKDIR $GZWEB_WS
@@ -72,7 +84,10 @@ WORKDIR $GZWEB_WS
 RUN hg up default  &&\
     xvfb-run -s "-screen 0 1280x1024x24" ./deploy.sh -m -t
 
-USER user
+USER docker
+RUN /bin/bash -c "source /usr/share/gazebo/setup.sh" >> ~/.bashrc
+RUN sudo -H pip install gym && \
+    sudo -H pip3 install gym
 
 RUN wget -P /tmp/ https://bitbucket.org/osrf/gazebo_models/get/default.tar.gz &&\
     mkdir -p $HOME/.gazebo/models &&\
